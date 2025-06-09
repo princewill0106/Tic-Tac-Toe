@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tic Tac Toe - AI with Effects</title>
+  <style>
+    :root {
+      --bg: #f9f9f9;
+      --text: #111;
+      --cell-bg: #fff;
+      --cell-border: #333;
+      --win-bg: #90ee90;
+    }
+
+    body.dark {
+      --bg: #121212;
+      --text: #f1f1f1;
+      --cell-bg: #333;
+      --cell-border: #bbb;
+      --win-bg: #4caf50;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #status {
+      font-size: 18px;
+      margin: 10px;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-gap: 5px;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      background-color: var(--cell-bg);
+      border: 2px solid var(--cell-border);
+      font-size: 2.5em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .cell.win {
+      background-color: var(--win-bg) !important;
+    }
+
+    .buttons {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: var(--cell-border);
+      color: var(--bg);
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <h1>Tic Tac Toe - vs AI</h1>
+  <div id="status">Your turn (X)</div>
+  <div id="board"></div>
+
+  <div class="buttons">
+    <button id="resetBtn">Reset Game</button>
+    <button id="themeToggle">Toggle Dark Mode</button>
+  </div>
+
+  <!-- Audio -->
+  <audio id="moveSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7e2939a289.mp3?filename=click-124467.mp3"></audio>
+  <audio id="winSound" src="https://cdn.pixabay.com/download/audio/2021/10/11/audio_400cf08c9c.mp3?filename=game-win-sound-121009.mp3"></audio>
+  <audio id="drawSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_e519d58c77.mp3?filename=notification-124473.mp3"></audio>
+
+  <script>
+    const board = document.getElementById("board");
+    const statusText = document.getElementById("status");
+    const resetBtn = document.getElementById("resetBtn");
+    const themeToggle = document.getElementById("themeToggle");
+
+    const moveSound = document.getElementById("moveSound");
+    const winSound = document.getElementById("winSound");
+    const drawSound = document.getElementById("drawSound");
+
+    let cells = Array(9).fill("");
+    let gameOver = false;
+
+    const HUMAN = "X";
+    const AI = "O";
+
+    const winCombos = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    function renderBoard() {
+      board.innerHTML = "";
+      cells.forEach((cell, index) => {
+        const cellDiv = document.createElement("div");
+        cellDiv.classList.add("cell");
+        cellDiv.dataset.index = index;
+        cellDiv.textContent = cell;
+        cellDiv.addEventListener("click", handleClick);
+        board.appendChild(cellDiv);
+      });
+    }
+
+    function handleClick(e) {
+      const index = e.target.dataset.index;
+      if (cells[index] !== "" || gameOver) return;
+
+      cells[index] = HUMAN;
+      moveSound.play();
+      renderBoard();
+
+      if (checkWin(HUMAN)) {
+        highlightWin(HUMAN);
+        statusText.textContent = "You win!";
+        winSound.play();
+        gameOver = true;
+        return;
+      } else if (isDraw()) {
+        statusText.textContent = "It's a draw!";
+        drawSound.play();
+        gameOver = true;
+        return;
+      }
+
+      statusText.textContent = "AI's turn...";
+      setTimeout(() => {
+        let bestMove = getBestMove();
+        cells[bestMove] = AI;
+        moveSound.play();
+        renderBoard();
+
+        if (checkWin(AI)) {
+          highlightWin(AI);
+          statusText.textContent = "AI wins!";
+          winSound.play();
+          gameOver = true;
+        } else if (isDraw()) {
+          statusText.textContent = "It's a draw!";
+          drawSound.play();
+          gameOver = true;
+        } else {
+          statusText.textContent = "Your turn (X)";
+        }
+      }, 400);
+    }
+
+    function highlightWin(player) {
+      for (let combo of winCombos) {
+        if (combo.every(index => cells[index] === player)) {
+          combo.forEach(index => {
+            document.querySelector(`.cell[data-index="${index}"]`).classList.add("win");
+          });
+          break;
+        }
+      }
+    }
+
+    function checkWin(player) {
+      return winCombos.some(combo =>
+        combo.every(index => cells[index] === player)
+      );
+    }
+
+    function isDraw() {
+      return cells.every(cell => cell !== "");
+    }
+
+    function getBestMove() {
+      let bestScore = -Infinity;
+      let move;
+      for (let i = 0; i < cells.length; i++) {
+        if (cells[i] === "") {
+          cells[i] = AI;
+          let score = minimax(cells, 0, false);
+          cells[i] = "";
+          if (score > bestScore) {
+            bestScore = score;
+            move = i;
+          }
+        }
+      }
+      return move;
+    }
+
+    function minimax(boardState, depth, isMaximizing) {
+      if (checkWin(AI)) return 10 - depth;
+      if (checkWin(HUMAN)) return depth - 10;
+      if (isDraw()) return 0;
+
+      if (isMaximizing) {
+        let best = -Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (boardState[i] === "") {
+            boardState[i] = AI;
+            best = Math.max(best, minimax(boardState, depth + 1, false));
+            boardState[i] = "";
+          }
+        }
+        return best;
+      } else {
+        let best = Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (boardState[i] === "") {
+            boardState[i] = HUMAN;
+            best = Math.min(best, minimax(boardState, depth + 1, true));
+            boardState[i] = "";
+          }
+        }
+        return best;
+      }
+    }
+
+    resetBtn.addEventListener("click", () => {
+      cells = Array(9).fill("");
+      gameOver = false;
+      statusText.textContent = "Your turn (X)";
+      renderBoard();
+    });
+
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+    });
+
+    renderBoard();
+  </script>
+</body>
+</html>
