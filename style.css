@@ -1,0 +1,80 @@
+:root {
+  --bg: #f9f9f9;
+  --text: #111;
+  --cell-bg: #fff;
+  --cell-border: #333;
+  --win-bg: #90ee90;
+}
+
+body.dark {
+  --bg: #121212;
+  --text: #f1f1f1;
+  --cell-bg: #333;
+  --cell-border: #bbb;
+  --win-bg: #4caf50;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+  transition: background 0.3s, color 0.3s;
+}
+
+h1 {
+  margin-bottom: 10px;
+}
+
+#status {
+  font-size: 18px;
+  margin: 10px;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  grid-gap: 5px;
+}
+
+.cell {
+  width: 100px;
+  height: 100px;
+  background-color: var(--cell-bg);
+  border: 2px solid var(--cell-border);
+  font-size: 2.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.cell.win {
+  background-color: var(--win-bg) !important;
+}
+
+.buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background: var(--cell-border);
+  color: var(--bg);
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background: var(--text);
+}
